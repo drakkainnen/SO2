@@ -2,4 +2,5 @@
 .ycm_extra_conf.pyc
 zalozenia.txt
 *.o
+*.a
 *unittest

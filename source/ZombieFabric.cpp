@@ -1,50 +1,85 @@
 #include "ZombieFabric.h"
-#include "Zombie.h"
 #include <utility>
 #include <random>
+#include <unistd.h>
+#include "Simulation.h"
 
-ZombieFabric::ZombieFabric(int numberOfZombies)
+ZombieFabric::ZombieFabric(std::vector<Corpses*>& corpses, std::vector<Zombie*>& zombies)
+	: corpsePositions(corpses), zombiePositions(zombies)
 {
-	for(int i = 0; i < numberOfZombies; ++i)
-	{
-		while(createZombie() == false);
-	}
 }
 
 bool ZombieFabric::createZombie()
 {
-	//posible place for lock
-	auto& corpse = corpseCollection.front();
-	Zombie freshZombie;
-	auto pos = corpse.getPosition();
-	freshZombie.setPosition(pos.first, pos.second);
-	
-	//tutaj lock. Sprawdzamy pozycje czy nic się tam nie znajduje
-	
+	Zombie* zombie = new Zombie();	
+	pthread_mutex_lock(&Simulation::zombieMutex);
+	zombiePositions.push_back(zombie);
+	createZombieThread(*zombie);
+	pthread_mutex_unlock(&Simulation::zombieMutex);
 	return true;
 }
 
-bool ZombieFabri::createZombieAtRandomPosition()
+void ZombieFabric::createZombieThread(Zombie& zombie)
+{	
+	pthread_t thread;
+	pthread_attr_t attr; //moze detach bylby lepszy
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	pthread_create(&thread, &attr, zombie.starter, (void*)&zombie);
+	threadColection.push_back(thread);//nie wiem po co mi to na razie
+	pthread_attr_destroy(&attr);
+}
+
+bool ZombieFabric::createZombieAtRandomPosition()
 {
+	std::default_random_engine generator;
+	std::uniform_int_distribution<int> disForX(1,6);
+	std::uniform_int_distribution<int> disForY(1,6);
 	//losujemy pozycje
-	int x = 0;
-	int y = 0;
-	//tutaj lock
-	Zombie zombie;
-	zombie.setPosition(x, y);
-	//run thread
-	//uwazac moze byc deadlock
+	int x = disForX(generator);
+	int y = disForY(generator);
+	bool permit = true;
+	pthread_mutex_lock(&Simulation::zombieMutex);
+	for(int i = 0; i < 10 ; ++i) //max tries
+	{
+		for(auto z : zombiePositions)
+		{
+			auto pos = z->getPosition();
+			permit = (pos.first == x && pos.second == y) ? false : true;
+		}
+		if(permit)
+		{
+			break;
+		}
+	}
+	Zombie* zombie = new Zombie();
+	zombie->setPosition(x, y);	
+	zombiePositions.push_back(zombie);
+	createZombieThread(*zombie);
+	pthread_mutex_unlock(&Simulation::zombieMutex);
 	return true;
 }
 
 void ZombieFabric::addCorpse(int x, int y)
 { 
-	//possible place for lock
-	Corpses corpse(x, y);
-	corpseCollection.push(corpse);	
+	Corpses* corpse = new Corpses(x, y);
+	pthread_mutex_lock(&Simulation::zombieMutex);
+	corpsePositions.push_back(corpse);
+	pthread_mutex_unlock(&Simulation::zombieMutex);
 }
 
-void processCorpses()
+void* ZombieFabric::run()
 {
-
+	createZombieAtRandomPosition();
+	usleep(500000);
+	createZombieAtRandomPosition();
+	usleep(500000);
+	createZombieAtRandomPosition();
+	usleep(500000);
+	for(auto t : threadColection)
+	{
+		join(t);
+	}
+	pthread_exit(nullptr);
 }
+

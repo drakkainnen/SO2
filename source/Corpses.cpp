@@ -15,7 +15,7 @@ pair<int, int> Corpses::getPosition()
 
 void Corpses::porcessBody()
 {
-	percent += 2;		
+	percent += 10;		
 }
 
 int Corpses::getPercent()

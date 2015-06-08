@@ -34,13 +34,19 @@ GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
 
 TESTS = Zombie_unittest
 BIN = Zombies
-SOURCE_FILES = main.cpp Zombie.h Zombie.cpp
+SOURCE_FILES = $(USER_DIR)/main.cpp $(USER_DIR)/Simulation.cpp $(USER_DIR)/Simulation.h \
+				$(USER_DIR)/Corpses.cpp $(USER_DIR)/Corpses.h \
+				$(USER_DIR)/Zombie.cpp $(USER_DIR)/Zombie.h \
+				$(USER_DIR)/ZombieFabric.cpp $(USER_DIR)/ZombieFabric.h \
 
 # House-keeping build targets.
 all : test build
 
 build : 
 	$(CXX) -o $(BIN) $(USER_DIR)/*.cpp $(USER_DIR)/*.h  $(CXXFLAGS)
+
+build_custom :
+	$(CXX) -o $(BIN) $(SOURCE_FILES) $(CXXFLAGS)
 
 test : $(TESTS)
 

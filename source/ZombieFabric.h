@@ -1,20 +1,28 @@
 #ifndef ZombieFabric_CLASS
 #define ZombieFabric_CLASS
 
-#include <queue>
+#include <vector>
 #include "Corpses.h"
+#include "Zombie.h"
+#include "Runnable.h"
 
-class ZombieFabric
+class ZombieFabric : public Runnable
 {
-	std::queue<Corpses> corpseCollection;
-	
+	std::vector<Corpses*>& corpsePositions;
+	std::vector<Zombie*>& zombiePositions;
+	std::vector<pthread_t> threadColection;
+
 	bool createZombie();
 	bool createZombieAtRandomPosition();
+	void createZombieThread(Zombie& zombie);
 		
 public:
-	ZombieFabric(int numberOfZombies);
+	ZombieFabric(std::vector<Corpses*>& corpses, std::vector<Zombie*>& zombies);
+
 	void addCorpse(int x, int y);
-	void processCorpses();
+	void process();
+
+	void* run();
 
 };
 

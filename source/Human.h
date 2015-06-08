@@ -3,7 +3,7 @@
 
 #include <utility>
 
-enum class Direction
+enum Direction
 {
 	NORTH,
 	EAST,

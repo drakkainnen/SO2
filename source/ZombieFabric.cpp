@@ -70,16 +70,21 @@ void ZombieFabric::addCorpse(int x, int y)
 
 void* ZombieFabric::run()
 {
-	createZombieAtRandomPosition();
-	usleep(500000);
-	createZombieAtRandomPosition();
-	usleep(500000);
-	createZombieAtRandomPosition();
-	usleep(500000);
+	while(isStoped() == false)
+	{
+		Runnable::checkAndSuspend();
+		createZombieAtRandomPosition();
+		for(auto t : threadColection)
+		{
+			tryJoin(t);
+		}
+		usleep(5000000);
+	}
+
 	for(auto t : threadColection)
 	{
 		join(t);
 	}
-	pthread_exit(nullptr);
+	pthread_exit((void*)1L);
 }
 

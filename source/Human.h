@@ -2,6 +2,7 @@
 #define HUMAN_CLASS
 
 #include <utility>
+#include "Runnable.h"
 
 enum Direction
 {
@@ -11,7 +12,7 @@ enum Direction
 	SOUTH
 };
 
-class Human
+class Human : public Runnable
 {
 	int x;
 	int y;
@@ -24,6 +25,11 @@ public:
 	std::pair<int, int> getPosition();
 	void setPosition(int x, int y);
 	void setDirection(Direction direction);
+
+	void process();
+	void* run();
+
+	
 	
 };
 

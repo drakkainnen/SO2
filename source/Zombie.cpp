@@ -1,8 +1,10 @@
 #include "Zombie.h"
-#include "Human.h"
+#include "Simulation.h"
 #include <utility>
 #include <random>
 #include <pthread.h>
+#include <unistd.h>
+
 using namespace std;
 
 Zombie::~Zombie()
@@ -25,15 +27,20 @@ void Zombie::process()
 	default_random_engine generator;
 	uniform_int_distribution<int> randDirection(0,3);
 
-	auto newDirection = randDirection(generator);
-	//lock
-	//if(newDirection == Direction::NORTH && checkNorth())
-	//{
-
-	//}
+	pthread_mutex_lock(&Simulation::corpseMutex);
+	++x;
+	++y;
+	pthread_mutex_unlock(&Simulation::corpseMutex);
 }
 
 void* Zombie::run()
 {
-	return nullptr;
+	while(isStoped() == false)
+	{
+		process();
+		usleep(1000000);
+		checkAndSuspend();
+	}
+
+	pthread_exit((void*)1L);
 }

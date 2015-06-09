@@ -25,6 +25,7 @@ class Simulation : public Runnable
 	void printCorpses();
 
 	void createThreads();
+	void stopAllThreads();
 
 public:
 	static pthread_mutex_t zombieMutex;
@@ -39,6 +40,7 @@ public:
 	static bool close;
 
 	Simulation();
+	~Simulation();
 	void prepare(const int numberOfThreads);
 	void *run();
 };

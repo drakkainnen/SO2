@@ -8,45 +8,29 @@ class Runnable
 	pthread_mutex_t stopMutex;
 	bool stop;
 
+	static pthread_mutex_t pauseMutex;
+	static pthread_cond_t pauseCond;
+	static bool pauseFlag;
+
 public:
-	virtual ~Runnable()
-	{
-		pthread_mutex_destroy(&stopMutex);
-	}
+	virtual ~Runnable();
+	Runnable();
 
-	Runnable()
-	{
-		pthread_mutex_init(&stopMutex, NULL); 
-	}
+	static void init();
+	static void destroy();
 
-	static void* starter(void* args)
-	{
-		return ((Runnable*)args)->run();
-	}
-
+	static void* starter(void* args);
 	virtual void* run() = 0;
 
-	void join(pthread_t& thread)
-	{
-		void* status;
-		pthread_join(thread, &status);
-		if(status == nullptr)
-		{
-			std::cout << "all fine\n";
-		}
-	}
+	static void join(pthread_t& thread);
+	static void tryJoin(pthread_t& thread);
 	
-	void stopThread()
-	{
-		pthread_mutex_lock(&stopMutex);
-		stop = true;
-		pthread_mutex_unlock(&stopMutex);
-	}
+	void stopThread();
+	bool isStoped();
 
-	bool isStoped()
-	{
-		return stop;
-	}
+	static void pause();
+	static void reasume();
+	static void checkAndSuspend();
 };
 
 #endif // RUNNABLE_CLASS

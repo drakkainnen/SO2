@@ -16,6 +16,19 @@ Simulation::Simulation()
 	corpsePositions.push_back(new Corpses(20,10));
 }
 
+Simulation::~Simulation()
+{
+	for(auto z : corpsePositions)
+	{
+		delete z;
+	}
+	for(auto z : zombiePositions)
+	{
+		delete z;
+	}
+	delete fabricZombie;
+}
+
 void Simulation::prepare(const int numberOfThreads)
 {
 	prepareLocks();
@@ -36,6 +49,8 @@ void* Simulation::run()
 	
 	while(c != 'c')
 	{
+		clear();
+
 		printHumans();
 		printCorpses();
 		printZombies();
@@ -45,10 +60,30 @@ void* Simulation::run()
 		noecho();
 		timeout(1);
 		c = getch();
-	} 
+
+		if(c == 'p')
+		{			
+			Runnable::pause();
+		}
+		else if(c == 'P')
+		{			
+			Runnable::reasume();
+		}
+	}
+	stopAllThreads();
 	endwin();
-	pthread_exit(new int(1));
+	pthread_exit((void*)1L);
 }
+
+void Simulation::stopAllThreads()
+{
+	fabricZombie->stopThread();
+	for(auto t : zombiePositions)
+	{
+		t->stopThread();
+	}
+}
+
 void Simulation::prepareLocks()
 {
 	pthread_mutex_init(&Simulation::zombieMutex, NULL);
@@ -72,6 +107,11 @@ void Simulation::printHumans()
 void Simulation::printZombies()
 {
 	pthread_mutex_lock(&Simulation::zombieMutex);
+	for(auto zombie : zombiePositions)
+	{
+		auto pos = zombie->getPosition();
+		mvaddch(pos.first, pos.second, 'Z');
+	}	
 	pthread_mutex_unlock(&Simulation::zombieMutex);
 }
 

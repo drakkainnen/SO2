@@ -11,6 +11,7 @@ Simulation::Simulation()
 	: zombiePositions(), corpsePositions()
 {
 	fabricZombie = new ZombieFabric(corpsePositions, zombiePositions);
+	fabricHuman = new HumanFabric(humanPositions, zombiePositions, corpsePositions);
 	corpsePositions.push_back(new Corpses(10,20));
 	corpsePositions.push_back(new Corpses(11,20));
 	corpsePositions.push_back(new Corpses(20,10));
@@ -27,6 +28,7 @@ Simulation::~Simulation()
 		delete z;
 	}
 	delete fabricZombie;
+	delete fabricHuman;
 }
 
 void Simulation::prepare(const int numberOfThreads)
@@ -36,6 +38,7 @@ void Simulation::prepare(const int numberOfThreads)
 	createThreads();
 
 	this->join(zombieFabricThread);
+	this->join(humanFabricThread);
 	this->join(simulationThread);
 	
 	deleteLocks();
@@ -82,6 +85,11 @@ void Simulation::stopAllThreads()
 	{
 		t->stopThread();
 	}
+	fabricHuman->stopThread();
+	for(auto t : humanPositions)
+	{
+		t->stopThread();
+	}
 }
 
 void Simulation::prepareLocks()
@@ -101,6 +109,11 @@ void Simulation::deleteLocks()
 void Simulation::printHumans()
 {
 	pthread_mutex_lock(&Simulation::humanMutex);
+	for(auto human : humanPositions)
+	{
+		auto pos = human->getPosition();
+		mvaddch(pos.first, pos.second, 'Z');
+	}	
 	pthread_mutex_unlock(&Simulation::humanMutex);
 }
 
@@ -132,6 +145,7 @@ void Simulation::createThreads()
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
+	pthread_create(&humanFabricThread, &attr, fabricHuman->starter, (void *)fabricHuman);
 	pthread_create(&zombieFabricThread, &attr, fabricZombie->starter, (void *)fabricZombie);
 	pthread_create(&simulationThread, &attr, this->starter, (void *)this);
 

@@ -2,20 +2,21 @@
 #define Simulation_CLASS
 
 #include <pthread.h>
+#include <list>
 
 #include "Runnable.h"
 #include "ZombieFabric.h"
+#include "HumanFabric.h"
 #include "Corpses.h"
 
 class Simulation : public Runnable
 {
-	std::vector<Zombie*> zombiePositions;
-	//
-	//std::vector<Human> humanPositions;
-
-	std::vector<Corpses*> corpsePositions;
+	std::list<Zombie*> zombiePositions;
+	std::list<Human*> humanPositions;
+	std::list<Corpses*> corpsePositions;
 
 	ZombieFabric* fabricZombie;
+	HumanFabric* fabricHuman;
 
 	void prepareLocks();
 	void deleteLocks();
@@ -35,9 +36,6 @@ public:
 	pthread_t zombieFabricThread;
 	pthread_t humanFabricThread;
 	pthread_t simulationThread;
-
-	static pthread_cond_t pause;
-	static bool close;
 
 	Simulation();
 	~Simulation();

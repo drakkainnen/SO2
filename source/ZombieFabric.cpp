@@ -4,14 +4,17 @@
 #include <unistd.h>
 #include "Simulation.h"
 
-ZombieFabric::ZombieFabric(std::vector<Corpses*>& corpses, std::vector<Zombie*>& zombies)
+using namespace std;
+
+ZombieFabric::ZombieFabric(std::list<Corpses*>& corpses, std::list<Zombie*>& zombies)
 	: corpsePositions(corpses), zombiePositions(zombies)
 {
 }
 
-bool ZombieFabric::createZombie()
+bool ZombieFabric::createZombie(pair<int, int> pos)
 {
 	Zombie* zombie = new Zombie();	
+	zombie->setPosition(pos.first, pos.second);
 	pthread_mutex_lock(&Simulation::zombieMutex);
 	zombiePositions.push_back(zombie);
 	createZombieThread(*zombie);
@@ -73,12 +76,13 @@ void* ZombieFabric::run()
 	while(isStoped() == false)
 	{
 		Runnable::checkAndSuspend();
-		createZombieAtRandomPosition();
+		//createZombieAtRandomPosition();
+		process();
 		for(auto t : threadColection)
 		{
 			tryJoin(t);
 		}
-		usleep(5000000);
+		usleep(1000000);
 	}
 
 	for(auto t : threadColection)
@@ -86,5 +90,40 @@ void* ZombieFabric::run()
 		join(t);
 	}
 	pthread_exit((void*)1L);
+}
+
+void ZombieFabric::process()
+{
+	pthread_mutex_lock(&Simulation::corpseMutex);
+	auto ix = corpsePositions.begin();
+	while(ix != corpsePositions.end())
+	{
+		Zombie* z;
+		if((*ix)->getPercent() == 100)
+		{
+			auto pos = (*ix)->getPosition();
+			z = new Zombie();
+			z->setPosition(pos.first, pos.second);
+			readyZombie.push_back(z);
+			ix = corpsePositions.erase(ix);
+		}
+		else
+		{
+			(*ix)->porcessBody();
+			++ix;
+		}
+	}
+	pthread_mutex_unlock(&Simulation::corpseMutex);
+
+	while(readyZombie.empty() == false)
+	{
+		auto z = readyZombie.back();
+		readyZombie.pop_back();
+		
+		pthread_mutex_lock(&Simulation::zombieMutex);
+		zombiePositions.push_back(z);
+		createZombieThread(*z);
+		pthread_mutex_unlock(&Simulation::zombieMutex);
+	}
 }
 

@@ -1,6 +1,7 @@
 #include "Human.h"
 #include "Simulation.h"
 #include <pthread.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -46,10 +47,11 @@ void* Human::run()
 	while(isStoped() == false)
 	{
 		checkAndSuspend();
+		usleep(1000000);
 		process();
 		if(x < 0 || y < 0 || x > 10 || y > 10)
 		{
-			break;
+			stopThread();
 		}
 	}
 	pthread_exit((void*)1L);

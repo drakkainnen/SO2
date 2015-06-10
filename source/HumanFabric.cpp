@@ -14,15 +14,35 @@ HumanFabric::HumanFabric(std::list<Human*>& humans, std::list<Zombie*>& zombie, 
 
 Human* HumanFabric::createHuman()
 {
-	default_random_engine generator;
-	uniform_int_distribution<int> disForX(MIN_X,MAX_X);
-	uniform_int_distribution<int> disForY(MIN_X,MAX_X);
-	auto randX = bind(disForX, generator);
-	auto randY = bind(disForY, generator);
+	random_device generator;
+	mt19937 mt(generator());
+	uniform_int_distribution<int> wall(0, 3);
+	uniform_int_distribution<int> disForX(Simulation::MIN_X, Simulation::MAX_X);
+	uniform_int_distribution<int> disForY(Simulation::MIN_Y, Simulation::MAX_Y);
+	auto randX = bind(disForX, mt);
+	auto randY = bind(disForY, mt);
 
+	auto randWall = wall(mt);
 	Human* human = new Human();
-	human->setPosition(randX(), randY());
-	human->setDirection(Direction::SOUTH);
+	human->setDirection((Direction)randWall);
+
+	if(randWall == Direction::NORTH)
+	{
+		human->setPosition(randX(), Simulation::MAX_Y);
+	}
+	else if(randWall == Direction::SOUTH)
+	{
+		human->setPosition(randX(), Simulation::MIN_Y);
+	}
+	else if(randWall == Direction::WEST)
+	{
+		human->setPosition(Simulation::MAX_X, randY());
+	}
+	else
+	{
+		human->setPosition(Simulation::MIN_X, randY());
+	}
+
 	return human;
 }
 
@@ -31,6 +51,7 @@ void* HumanFabric::run()
 	while(isStoped() == false)
 	{
 		process();
+
 		usleep(10000000);
 		checkAndSuspend();
 	}
@@ -59,6 +80,6 @@ void HumanFabric::createHumanThread(Human& human)
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	pthread_create(&thread, &attr, human.starter, (void*)&human);
-	humanThreads.push_back(thread);//nie wiem po co mi to na razie
+	humanThreads.push_back(thread);
 	pthread_attr_destroy(&attr);
 }

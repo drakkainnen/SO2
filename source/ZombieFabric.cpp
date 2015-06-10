@@ -6,14 +6,14 @@
 
 using namespace std;
 
-ZombieFabric::ZombieFabric(std::list<Corpses*>& corpses, std::list<Zombie*>& zombies)
-	: corpsePositions(corpses), zombiePositions(zombies)
+ZombieFabric::ZombieFabric(std::list<Corpses*>& corpses, std::list<Zombie*>& zombies, std::list<Human*>& humanPositions)
+	: corpsePositions(corpses), zombiePositions(zombies), humanPositions(humanPositions)
 {
 }
 
 bool ZombieFabric::createZombie(pair<int, int> pos)
 {
-	Zombie* zombie = new Zombie();	
+	Zombie* zombie = new Zombie(zombiePositions, humanPositions);	
 	zombie->setPosition(pos.first, pos.second);
 	pthread_mutex_lock(&Simulation::zombieMutex);
 	zombiePositions.push_back(zombie);
@@ -55,7 +55,7 @@ bool ZombieFabric::createZombieAtRandomPosition()
 			break;
 		}
 	}
-	Zombie* zombie = new Zombie();
+	Zombie* zombie = new Zombie(zombiePositions, humanPositions);
 	zombie->setPosition(x, y);	
 	zombiePositions.push_back(zombie);
 	createZombieThread(*zombie);
@@ -102,7 +102,7 @@ void ZombieFabric::process()
 		if((*ix)->getPercent() == 100)
 		{
 			auto pos = (*ix)->getPosition();
-			z = new Zombie();
+			z = new Zombie(zombiePositions, humanPositions);
 			z->setPosition(pos.first, pos.second);
 			readyZombie.push_back(z);
 			ix = corpsePositions.erase(ix);

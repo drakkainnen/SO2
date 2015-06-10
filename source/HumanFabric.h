@@ -8,14 +8,10 @@
 #include <vector>
 #include <list>
 #include <pthread.h>
+#include <random>
 
 class HumanFabric : public Runnable
 {
-	static const int MIN_X = 0;
-	static const int MIN_Y = 10;
-	static const int MAX_X = 0;
-	static const int MAX_Y = 10;
-
 	std::list<Human*>& humanPositions;
 	std::list<Zombie*>& zombiePositions;
 	std::list<Corpses*>& corpesPositions;

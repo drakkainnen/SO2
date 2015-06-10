@@ -37,6 +37,11 @@ public:
 	pthread_t humanFabricThread;
 	pthread_t simulationThread;
 
+	static int MIN_X;
+	static int MAX_X;
+	static int MIN_Y;
+	static int MAX_Y;
+
 	Simulation();
 	~Simulation();
 	void prepare(const int numberOfThreads);

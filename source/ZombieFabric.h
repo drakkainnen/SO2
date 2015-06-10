@@ -5,12 +5,15 @@
 #include <list>
 #include "Corpses.h"
 #include "Zombie.h"
+#include "Human.h"
 #include "Runnable.h"
 
 class ZombieFabric : public Runnable
 {
 	std::list<Corpses*>& corpsePositions;
 	std::list<Zombie*>& zombiePositions;
+	std::list<Human*>& humanPositions;
+
 	std::list<pthread_t> threadColection;
 
 	std::vector<Zombie*> readyZombie;
@@ -20,7 +23,7 @@ class ZombieFabric : public Runnable
 	void createZombieThread(Zombie& zombie);
 		
 public:
-	ZombieFabric(std::list<Corpses*>& corpses, std::list<Zombie*>& zombies);
+	ZombieFabric(std::list<Corpses*>& corpses, std::list<Zombie*>& zombies, std::list<Human*>& humanPositions);
 
 	void addCorpse(int x, int y);
 	void process();

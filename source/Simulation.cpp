@@ -7,14 +7,20 @@ pthread_mutex_t Simulation::zombieMutex;
 pthread_mutex_t Simulation::humanMutex;
 pthread_mutex_t Simulation::corpseMutex;
 
+int Simulation::MIN_X = 0;
+int Simulation::MAX_X = 0;
+int Simulation::MIN_Y = 0;
+int Simulation::MAX_Y = 0;
+
 Simulation::Simulation()
 	: zombiePositions(), corpsePositions()
 {
-	fabricZombie = new ZombieFabric(corpsePositions, zombiePositions);
+	fabricZombie = new ZombieFabric(corpsePositions, zombiePositions, humanPositions);
 	fabricHuman = new HumanFabric(humanPositions, zombiePositions, corpsePositions);
 	corpsePositions.push_back(new Corpses(10,20));
-	corpsePositions.push_back(new Corpses(11,20));
-	corpsePositions.push_back(new Corpses(20,10));
+	corpsePositions.push_back(new Corpses(10,20));
+	corpsePositions.push_back(new Corpses(10,20));
+	corpsePositions.push_back(new Corpses(10,20));
 }
 
 Simulation::~Simulation()
@@ -48,15 +54,25 @@ void Simulation::prepare(const int numberOfThreads)
 void* Simulation::run()
 {
 	initscr();
+
+	getmaxyx(stdscr, MAX_Y, MAX_X); 
+	MAX_X -= 30;
+
 	char c = 0;
 	
 	while(c != 'c')
 	{
 		clear();
 
-		printHumans();
+		pthread_mutex_lock(&Simulation::humanMutex);
+		pthread_mutex_lock(&Simulation::zombieMutex);
+		pthread_mutex_lock(&Simulation::corpseMutex);
 		printCorpses();
+		printHumans();
 		printZombies();
+		pthread_mutex_unlock(&Simulation::humanMutex);
+		pthread_mutex_unlock(&Simulation::zombieMutex);
+		pthread_mutex_unlock(&Simulation::corpseMutex);
 
 		refresh();
 
@@ -108,35 +124,35 @@ void Simulation::deleteLocks()
 
 void Simulation::printHumans()
 {
-	pthread_mutex_lock(&Simulation::humanMutex);
+	//pthread_mutex_lock(&Simulation::humanMutex);
 	for(auto human : humanPositions)
 	{
 		auto pos = human->getPosition();
-		mvaddch(pos.first, pos.second, 'Z');
+		mvaddch(pos.second, pos.first, 'H');
 	}	
-	pthread_mutex_unlock(&Simulation::humanMutex);
+	//pthread_mutex_unlock(&Simulation::humanMutex);
 }
 
 void Simulation::printZombies()
 {
-	pthread_mutex_lock(&Simulation::zombieMutex);
+	//pthread_mutex_lock(&Simulation::zombieMutex);
 	for(auto zombie : zombiePositions)
 	{
 		auto pos = zombie->getPosition();
-		mvaddch(pos.first, pos.second, 'Z');
+		mvaddch(pos.second, pos.first, 'Z');
 	}	
-	pthread_mutex_unlock(&Simulation::zombieMutex);
+	//pthread_mutex_unlock(&Simulation::zombieMutex);
 }
 
 void Simulation::printCorpses()
 {
-	pthread_mutex_lock(&Simulation::corpseMutex);
+	//pthread_mutex_lock(&Simulation::corpseMutex);
 	for(auto corpse : corpsePositions)
 	{
 		auto pos = corpse->getPosition();
-		mvaddch(pos.first, pos.second, 'X');
+		mvaddch(pos.second, pos.first, 'X');
 	}	
-	pthread_mutex_unlock(&Simulation::corpseMutex);
+	//pthread_mutex_unlock(&Simulation::corpseMutex);
 }
 
 void Simulation::createThreads()

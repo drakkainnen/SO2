@@ -7,6 +7,11 @@
 
 using namespace std;
 
+Zombie::Zombie(std::list<Zombie*>& zombiePositions, std::list<Human*>& humanPositions)
+	: zombiePositions(zombiePositions), humanPositions(humanPositions)
+{
+}
+
 Zombie::~Zombie()
 {
 }
@@ -24,21 +29,59 @@ void Zombie::setPosition(int x, int y)
 
 void Zombie::process()
 {
-	default_random_engine generator;
-	uniform_int_distribution<int> randDirection(0,3);
+	random_device generator;
+	mt19937 mt(generator());
+	uniform_int_distribution<int> direction(0, 3);
+	
+	auto randDirection  = (Direction)direction(mt); 
+	int mX = 0;
+	int mY = 0;
 
 	pthread_mutex_lock(&Simulation::corpseMutex);
-	++x;
-	++y;
+	if(randDirection == Direction::NORTH)
+	{
+		//jezeli idziesz na polnoc a nie mozesz to jednak zawroc
+		mY = y-1 < 0 ? 1 : -1;
+	}
+	else if(randDirection == Direction::SOUTH)
+	{
+		mY = y+1 > Simulation::MAX_Y ? -1 : 1;
+	}
+	else if(randDirection == Direction::WEST)
+	{
+		mX = x-1 < 0 ? 1 : -1;
+	}
+	else
+	{
+		mX = x+1 > Simulation::MAX_X ? -1 : 1;
+	}
+
+	for(auto z : zombiePositions)
+	{
+		if(z != this)
+		{
+			if(z->x == x+mX && z->y == y+mY)
+			{
+				mX = mY = 0;
+				break;
+			}
+		}
+	}
+	x += mX;
+	y += mY;
+
 	pthread_mutex_unlock(&Simulation::corpseMutex);
 }
 
 void* Zombie::run()
 {
+	random_device generator;
+	mt19937 mt(generator());
+	uniform_int_distribution<int> sleepTime(5000, 1000000);
 	while(isStoped() == false)
 	{
 		process();
-		usleep(1000000);
+		usleep(sleepTime(mt));
 		checkAndSuspend();
 	}
 

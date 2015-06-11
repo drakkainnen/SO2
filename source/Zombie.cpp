@@ -8,7 +8,7 @@
 using namespace std;
 
 Zombie::Zombie(std::list<Zombie*>& zombiePositions, std::list<Human*>& humanPositions)
-	: zombiePositions(zombiePositions), humanPositions(humanPositions)
+	: Runnable("Zombie"), zombiePositions(zombiePositions), humanPositions(humanPositions)
 {
 }
 

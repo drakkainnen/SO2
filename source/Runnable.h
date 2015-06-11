@@ -2,19 +2,23 @@
 #define RUNNABLE_CLASS
 #include <pthread.h>
 #include <iostream>
+#include <string>
 
 class Runnable
 {
-	pthread_mutex_t stopMutex;
 	bool stop;
+	std::string message;
+	std::string descryptor;
 
 	static pthread_mutex_t pauseMutex;
 	static pthread_cond_t pauseCond;
 	static bool pauseFlag;
 
 public:
+	pthread_t thread;
+
+	Runnable(std::string descryptor);
 	virtual ~Runnable();
-	Runnable();
 
 	static void init();
 	static void destroy();
@@ -23,14 +27,16 @@ public:
 	virtual void* run() = 0;
 
 	static void join(pthread_t& thread);
-	static void tryJoin(pthread_t& thread);
-	
+	static bool tryJoin(pthread_t& thread);	
 	void stopThread();
 	bool isStoped();
 
 	static void pause();
 	static void reasume();
 	static void checkAndSuspend();
+
+	std::string getMessageAndClean();
+	void setMessage(std::string message);
 };
 
 #endif // RUNNABLE_CLASS

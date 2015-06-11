@@ -7,7 +7,7 @@
 using namespace std;
 
 ZombieFabric::ZombieFabric(std::list<Corpses*>& corpses, std::list<Zombie*>& zombies, std::list<Human*>& humanPositions)
-	: corpsePositions(corpses), zombiePositions(zombies), humanPositions(humanPositions)
+	: Runnable("Zombie fabric"), corpsePositions(corpses), zombiePositions(zombies), humanPositions(humanPositions)
 {
 }
 
@@ -24,12 +24,11 @@ bool ZombieFabric::createZombie(pair<int, int> pos)
 
 void ZombieFabric::createZombieThread(Zombie& zombie)
 {	
-	pthread_t thread;
 	pthread_attr_t attr; //moze detach bylby lepszy
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	pthread_create(&thread, &attr, zombie.starter, (void*)&zombie);
-	threadColection.push_back(thread);//nie wiem po co mi to na razie
+	pthread_create(&zombie.thread, &attr, zombie.starter, (void*)&zombie);
+	zombie.thread = thread;
 	pthread_attr_destroy(&attr);
 }
 
@@ -42,6 +41,7 @@ bool ZombieFabric::createZombieAtRandomPosition()
 	int x = disForX(generator);
 	int y = disForY(generator);
 	bool permit = true;
+
 	pthread_mutex_lock(&Simulation::zombieMutex);
 	for(int i = 0; i < 10 ; ++i) //max tries
 	{
@@ -78,16 +78,7 @@ void* ZombieFabric::run()
 		Runnable::checkAndSuspend();
 		//createZombieAtRandomPosition();
 		process();
-		for(auto t : threadColection)
-		{
-			tryJoin(t);
-		}
 		usleep(1000000);
-	}
-
-	for(auto t : threadColection)
-	{
-		join(t);
 	}
 	pthread_exit((void*)1L);
 }
@@ -104,6 +95,7 @@ void ZombieFabric::process()
 			auto pos = (*ix)->getPosition();
 			z = new Zombie(zombiePositions, humanPositions);
 			z->setPosition(pos.first, pos.second);
+			z->setMessage("Zombie at ("+to_string(pos.first)+", "+to_string(pos.second)+").");
 			readyZombie.push_back(z);
 			ix = corpsePositions.erase(ix);
 		}

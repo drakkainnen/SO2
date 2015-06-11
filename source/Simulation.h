@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include <list>
+#include <sstream>
 
 #include "Runnable.h"
 #include "ZombieFabric.h"
@@ -18,15 +19,20 @@ class Simulation : public Runnable
 	ZombieFabric* fabricZombie;
 	HumanFabric* fabricHuman;
 
+	std::list<std::string> events;
+
 	void prepareLocks();
 	void deleteLocks();
 
 	void printHumans();
 	void printZombies();
 	void printCorpses();
+	void printEvents();
 
 	void createThreads();
 	void stopAllThreads();
+
+	void pushEvent(std::string message);
 
 public:
 	static pthread_mutex_t zombieMutex;
@@ -44,7 +50,7 @@ public:
 
 	Simulation();
 	~Simulation();
-	void prepare(const int numberOfThreads);
+	void prepare();
 	void *run();
 };
 

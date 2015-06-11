@@ -8,7 +8,7 @@
 using namespace std;
 
 HumanFabric::HumanFabric(std::list<Human*>& humans, std::list<Zombie*>& zombie, std::list<Corpses*>& corpses)
-	: humanPositions(humans), zombiePositions(zombie), corpesPositions(corpses)
+	: Runnable("Human fabric"), humanPositions(humans), zombiePositions(zombie), corpesPositions(corpses)
 {
 }
 
@@ -26,22 +26,31 @@ Human* HumanFabric::createHuman()
 	Human* human = new Human();
 	human->setDirection((Direction)randWall);
 
+	int x;
+	int y;
 	if(randWall == Direction::NORTH)
 	{
-		human->setPosition(randX(), Simulation::MAX_Y);
+		y = Simulation::MAX_Y;
+		x = randX();
 	}
 	else if(randWall == Direction::SOUTH)
 	{
-		human->setPosition(randX(), Simulation::MIN_Y);
+		y = Simulation::MIN_Y;
+		x = randX();
 	}
 	else if(randWall == Direction::WEST)
 	{
-		human->setPosition(Simulation::MAX_X, randY());
+		y = randY();
+		x = Simulation::MAX_X;
 	}
 	else
 	{
-		human->setPosition(Simulation::MIN_X, randY());
+		y = randY();
+		x = Simulation::MIN_X;
 	}
+	human->setPosition(x, y);
+	string message = "Human at ("+to_string(x)+", "+to_string(y)+").";
+	human->setMessage(message);
 
 	return human;
 }
@@ -51,40 +60,9 @@ void* HumanFabric::run()
 	while(isStoped() == false)
 	{
 		process();
-
-		for(auto t : humanThreads)
-		{
-			void* status;
-			pthread_tryjoin_np(t, &status);
-			if(1L == (long)status)
-			{
-				cout << "UCIEKL\n";
-				pthread_mutex_lock(&Simulation::humanMutex);
-
-				auto ix = humanPositions.begin();
-				while(ix != humanPositions.end())
-				{
-					if((*ix)->isStoped())
-					{
-						ix = humanPositions.erase(ix);
-					}
-					else
-					{
-						++ix;
-					}
-				}	
-				pthread_mutex_unlock(&Simulation::humanMutex);
-			}
-		}
 		usleep(1000000);
 		checkAndSuspend();
 	}
-
-	for(auto t : humanThreads)
-	{
-		join(t);
-	}
-
 	pthread_exit((void*)1L);
 }
 
@@ -99,11 +77,9 @@ void HumanFabric::process()
 
 void HumanFabric::createHumanThread(Human& human)
 {	
-	pthread_t thread;
 	pthread_attr_t attr; //moze detach bylby lepszy
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	pthread_create(&thread, &attr, human.starter, (void*)&human);
-	humanThreads.push_back(thread);
+	pthread_create(&human.thread, &attr, human.starter, (void*)&human);
 	pthread_attr_destroy(&attr);
 }

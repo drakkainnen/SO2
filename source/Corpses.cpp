@@ -1,4 +1,5 @@
 #include "Corpses.h"
+#include <string>
 
 using namespace std;
 

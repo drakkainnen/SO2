@@ -16,8 +16,6 @@ class HumanFabric : public Runnable
 	std::list<Zombie*>& zombiePositions;
 	std::list<Corpses*>& corpesPositions;
 
-	std::vector<pthread_t> humanThreads;
-	
 public:
 	
 	HumanFabric(std::list<Human*>& humans, std::list<Zombie*>& zombie, std::list<Corpses*>& corpses);

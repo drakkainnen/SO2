@@ -6,6 +6,11 @@
 
 using namespace std;
 
+Human::Human()
+	: Runnable("Human")
+{
+}
+
 pair<int, int> Human::getPosition()
 {
 	return make_pair(x, y);
@@ -54,7 +59,7 @@ void* Human::run()
 		checkAndSuspend();
 		usleep(dist(rand));
 		process();
-		if(x < Simulation::MIN_X || y < Simulation::MIN_Y || x > Simulation::MAX_X	|| y > Simulation::MAX_Y)
+		if(x < Simulation::MIN_X || y < Simulation::MIN_Y || x > Simulation::MAX_X || y > Simulation::MAX_Y)
 		{
 			stopThread();
 		}

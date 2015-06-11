@@ -1,8 +1,9 @@
 #ifndef HUMAN_CLASS
 #define HUMAN_CLASS
 
-#include <utility>
 #include "Runnable.h"
+#include <utility>
+#include <sstream>
 
 enum Direction
 {
@@ -17,9 +18,10 @@ class Human : public Runnable
 	int x;
 	int y;
 
-	Direction direction;	
+	Direction direction;
 
 public:
+	Human();
 	bool isEquiped;
 
 	std::pair<int, int> getPosition();
@@ -29,7 +31,7 @@ public:
 	void process();
 	void* run();
 
-	
+	//std::stringstream& getEvents();	
 	
 };
 

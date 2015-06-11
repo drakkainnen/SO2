@@ -13,7 +13,7 @@ int Simulation::MIN_Y = 0;
 int Simulation::MAX_Y = 0;
 
 Simulation::Simulation()
-	: zombiePositions(), corpsePositions()
+	: Runnable("Simulation"), zombiePositions(), corpsePositions()
 {
 	fabricZombie = new ZombieFabric(corpsePositions, zombiePositions, humanPositions);
 	fabricHuman = new HumanFabric(humanPositions, zombiePositions, corpsePositions);
@@ -37,15 +37,15 @@ Simulation::~Simulation()
 	delete fabricHuman;
 }
 
-void Simulation::prepare(const int numberOfThreads)
+void Simulation::prepare()
 {
 	prepareLocks();
 
 	createThreads();
 
-	this->join(zombieFabricThread);
-	this->join(humanFabricThread);
-	this->join(simulationThread);
+	join(fabricHuman->thread);
+	join(fabricZombie->thread);
+	join(thread);
 	
 	deleteLocks();
 	pthread_exit(nullptr);
@@ -54,7 +54,7 @@ void Simulation::prepare(const int numberOfThreads)
 void* Simulation::run()
 {
 	initscr();
-
+	curs_set(0);
 	getmaxyx(stdscr, MAX_Y, MAX_X); 
 	MAX_X -= 30;
 
@@ -70,9 +70,11 @@ void* Simulation::run()
 		printCorpses();
 		printHumans();
 		printZombies();
-		pthread_mutex_unlock(&Simulation::humanMutex);
-		pthread_mutex_unlock(&Simulation::zombieMutex);
 		pthread_mutex_unlock(&Simulation::corpseMutex);
+		pthread_mutex_unlock(&Simulation::zombieMutex);
+		pthread_mutex_unlock(&Simulation::humanMutex);
+	
+		printEvents();
 
 		refresh();
 
@@ -88,23 +90,29 @@ void* Simulation::run()
 		{			
 			Runnable::reasume();
 		}
+		else if(c == 'd')
+		{
+			stopAllThreads();
+		}
 	}
-	stopAllThreads();
 	endwin();
+	stopAllThreads();
 	pthread_exit((void*)1L);
 }
 
 void Simulation::stopAllThreads()
 {
 	fabricZombie->stopThread();
+	fabricHuman->stopThread();
 	for(auto t : zombiePositions)
 	{
 		t->stopThread();
+		join(t->thread);
 	}
-	fabricHuman->stopThread();
 	for(auto t : humanPositions)
 	{
 		t->stopThread();
+		join(t->thread);
 	}
 }
 
@@ -125,21 +133,57 @@ void Simulation::deleteLocks()
 void Simulation::printHumans()
 {
 	//pthread_mutex_lock(&Simulation::humanMutex);
-	for(auto human : humanPositions)
+	auto ix = humanPositions.begin();
+	while(ix != humanPositions.end())
 	{
-		auto pos = human->getPosition();
-		mvaddch(pos.second, pos.first, 'H');
+		auto human = *ix;
+		if(tryJoin(human->thread))
+		{
+			pushEvent("Human closed");
+			ix = humanPositions.erase(ix);
+		}
+		else
+		{
+			auto pos = human->getPosition();
+			mvaddch(pos.second, pos.first, 'H');
+			pushEvent(human->getMessageAndClean());
+			++ix;
+		}
 	}	
 	//pthread_mutex_unlock(&Simulation::humanMutex);
+}
+
+void Simulation::pushEvent(std::string message)
+{
+	if(message != "")
+	{
+		events.push_front(message);
+		if(events.size() > 10)
+		{
+			events.pop_back();
+		}
+	}
 }
 
 void Simulation::printZombies()
 {
 	//pthread_mutex_lock(&Simulation::zombieMutex);
-	for(auto zombie : zombiePositions)
+	auto ix = zombiePositions.begin();
+	while(ix != zombiePositions.end())
 	{
-		auto pos = zombie->getPosition();
-		mvaddch(pos.second, pos.first, 'Z');
+		auto zombie = *ix;
+		if(tryJoin(zombie->thread))
+		{
+			pushEvent("Zombie closed");
+			ix = zombiePositions.erase(ix);
+		}
+		else
+		{
+			auto pos = zombie->getPosition();
+			mvaddch(pos.second, pos.first, 'Z');
+			pushEvent(zombie->getMessageAndClean());
+			++ix;
+		}
 	}	
 	//pthread_mutex_unlock(&Simulation::zombieMutex);
 }
@@ -147,10 +191,36 @@ void Simulation::printZombies()
 void Simulation::printCorpses()
 {
 	//pthread_mutex_lock(&Simulation::corpseMutex);
-	for(auto corpse : corpsePositions)
+	int coordY = 0;
+	mvprintw(coordY, MAX_X, "Stan zwlok");
+	++coordY;
+
+	for(auto ix = corpsePositions.rbegin(); ix != corpsePositions.rend(); ++ix)
 	{
-		auto pos = corpse->getPosition();
+		auto pos = (*ix)->getPosition();
+		auto per = (*ix)->getPercent();
 		mvaddch(pos.second, pos.first, 'X');
+
+		if(coordY < 10)
+		{
+			int percent = 0;
+			int i = 0;
+			do
+			{
+				percent = i*10;
+				if(percent != per)
+				{
+					mvaddch(coordY, MAX_X+i, '=');
+				}
+				else
+				{
+					mvprintw(coordY, MAX_X+i, "> %d%%", per);
+				}
+				++i;
+			}
+			while(percent != per);
+			++coordY;
+		}
 	}	
 	//pthread_mutex_unlock(&Simulation::corpseMutex);
 }
@@ -161,9 +231,19 @@ void Simulation::createThreads()
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-	pthread_create(&humanFabricThread, &attr, fabricHuman->starter, (void *)fabricHuman);
-	pthread_create(&zombieFabricThread, &attr, fabricZombie->starter, (void *)fabricZombie);
-	pthread_create(&simulationThread, &attr, this->starter, (void *)this);
+	pthread_create(&fabricHuman->thread, &attr, fabricHuman->starter, (void *)fabricHuman);
+	pthread_create(&fabricZombie->thread, &attr, fabricZombie->starter, (void *)fabricZombie);
+	pthread_create(&thread, &attr, this->starter, (void *)this);
 
 	pthread_attr_destroy(&attr);
+}
+
+void Simulation::printEvents()
+{
+	int c = 0;
+	for(auto e : events)	
+	{
+		mvaddstr(12+c, MAX_X, e.c_str());
+		++c;
+	}
 }

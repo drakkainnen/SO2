@@ -4,11 +4,11 @@
 
 using namespace std;
 
-int main(int argv, char** args)
+int main()
 {
 	Runnable::init();
 	Simulation sim;
-	sim.prepare(argv);
+	sim.prepare();
 	Runnable::destroy();
 	return 0;
 }

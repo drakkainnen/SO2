@@ -14,8 +14,6 @@ class ZombieFabric : public Runnable
 	std::list<Zombie*>& zombiePositions;
 	std::list<Human*>& humanPositions;
 
-	std::list<pthread_t> threadColection;
-
 	std::vector<Zombie*> readyZombie;
 
 	bool createZombie(std::pair<int,int> pos);

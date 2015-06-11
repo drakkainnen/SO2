@@ -1,17 +1,18 @@
 #include "Runnable.h"
 
+using namespace std;
+
 pthread_cond_t Runnable::pauseCond;
 pthread_mutex_t Runnable::pauseMutex;
 bool Runnable::pauseFlag = false;
 
 Runnable::~Runnable()
 {
-	pthread_mutex_destroy(&stopMutex);
 }
 
-Runnable::Runnable()
+Runnable::Runnable(std::string descryptor)
 {
-	pthread_mutex_init(&stopMutex, NULL); 
+	this->descryptor = descryptor;
 }
 
 void* Runnable::starter(void* args)
@@ -33,35 +34,23 @@ void Runnable::join(pthread_t& thread)
 	}
 }
 
-void Runnable::tryJoin(pthread_t& thread)
+bool Runnable::tryJoin(pthread_t& thread)
 {
 	void* status;
 	pthread_tryjoin_np(thread, &status);
-	if((long)status == 1)
-	{
-		std::cout << "all fine\n";
-	}
-	else
-	{
-		std::cout << "not killed yet\n";
-	}
+	return (long)status == 1 ? true : false;
 }
 
 void Runnable::stopThread()
 {
 	reasume();
-	pthread_mutex_lock(&stopMutex);
 	stop = true;
-	pthread_mutex_unlock(&stopMutex);
+	message = descryptor+" stoped.";
 }
 
 bool Runnable::isStoped()
 {
-	bool result;
-	pthread_mutex_lock(&stopMutex);
-	result  = stop;
-	pthread_mutex_unlock(&stopMutex);
-	return result;
+	return stop;
 }
 
 void Runnable::pause()
@@ -88,6 +77,7 @@ void Runnable::checkAndSuspend()
 	}
 	pthread_mutex_unlock(&pauseMutex);
 }
+
 void Runnable::init()
 {
 	pthread_cond_init(&pauseCond, NULL);
@@ -98,4 +88,16 @@ void Runnable::destroy()
 {
 	pthread_cond_destroy(&pauseCond);
 	pthread_mutex_destroy(&pauseMutex);
+}
+
+std::string Runnable::getMessageAndClean()
+{
+	string result = message;
+	message = "";
+	return move(result);
+}
+
+void Runnable::setMessage(std::string message)
+{
+	this->message = message;
 }

@@ -2,6 +2,7 @@
 #include "Simulation.h"
 #include <pthread.h>
 #include <unistd.h>
+#include <random>
 
 using namespace std;
 
@@ -44,12 +45,16 @@ void Human::process()
 
 void* Human::run()
 {
+	std::random_device generator;
+	std::mt19937_64 rand(generator());
+	std::uniform_int_distribution<int> dist(500000, 1000000);
+
 	while(isStoped() == false)
 	{
 		checkAndSuspend();
-		usleep(1000000);
+		usleep(dist(rand));
 		process();
-		if(x < 0 || y < 0 || x > 10 || y > 10)
+		if(x < Simulation::MIN_X || y < Simulation::MIN_Y || x > Simulation::MAX_X	|| y > Simulation::MAX_Y)
 		{
 			stopThread();
 		}

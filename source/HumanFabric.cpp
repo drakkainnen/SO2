@@ -52,7 +52,31 @@ void* HumanFabric::run()
 	{
 		process();
 
-		usleep(10000000);
+		for(auto t : humanThreads)
+		{
+			void* status;
+			pthread_tryjoin_np(t, &status);
+			if(1L == (long)status)
+			{
+				cout << "UCIEKL\n";
+				pthread_mutex_lock(&Simulation::humanMutex);
+
+				auto ix = humanPositions.begin();
+				while(ix != humanPositions.end())
+				{
+					if((*ix)->isStoped())
+					{
+						ix = humanPositions.erase(ix);
+					}
+					else
+					{
+						++ix;
+					}
+				}	
+				pthread_mutex_unlock(&Simulation::humanMutex);
+			}
+		}
+		usleep(1000000);
 		checkAndSuspend();
 	}
 

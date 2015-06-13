@@ -5,6 +5,7 @@ using namespace std;
 pthread_cond_t Runnable::pauseCond;
 pthread_mutex_t Runnable::pauseMutex;
 bool Runnable::pauseFlag = false;
+int Runnable::threadNumber = 0;
 
 Runnable::~Runnable()
 {
@@ -12,7 +13,16 @@ Runnable::~Runnable()
 
 Runnable::Runnable(std::string descryptor)
 {
-	this->descryptor = descryptor;
+	this->descryptor = descryptor + " " + to_string(++threadNumber);
+}
+
+void Runnable::createThread(Runnable& runnable)
+{	
+	pthread_attr_t attr; //moze detach bylby lepszy
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	pthread_create(&runnable.thread, &attr, runnable.starter, (void*)&runnable);
+	pthread_attr_destroy(&attr);
 }
 
 void* Runnable::starter(void* args)
@@ -20,17 +30,17 @@ void* Runnable::starter(void* args)
 	return ((Runnable*)args)->run();
 }
 
-void Runnable::join(pthread_t& thread)
+void Runnable::join(Runnable* object)
 {
 	void* status;
-	pthread_join(thread, &status);
+	pthread_join(object->thread, &status);
 	if((long)status == 1)
 	{
-		std::cout << "all fine\n";
+		std::cout << "joined " + object->descryptor + "\n";
 	}
 	else
 	{
-		std::cout << "not killed yet\n";
+		std::cout << "already joined\n";
 	}
 }
 
@@ -45,7 +55,7 @@ void Runnable::stopThread()
 {
 	reasume();
 	stop = true;
-	message = descryptor+" stoped.";
+	message = " stoped.";
 }
 
 bool Runnable::isStoped()
@@ -92,8 +102,12 @@ void Runnable::destroy()
 
 std::string Runnable::getMessageAndClean()
 {
-	string result = message;
-	message = "";
+	string result;
+	if(message != "")
+	{
+		result = descryptor + message;
+		message = "";
+	}
 	return move(result);
 }
 

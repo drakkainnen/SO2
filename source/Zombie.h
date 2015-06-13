@@ -5,6 +5,7 @@
 #include <list>
 #include "Runnable.h"
 #include "Human.h"
+#include "Corpses.h"
 
 class Zombie : public Runnable
 {
@@ -13,9 +14,10 @@ class Zombie : public Runnable
 
 	std::list<Zombie*>& zombiePositions;
 	std::list<Human*>& humanPositions;
+	std::list<Corpses*>& corpsePositions;
 
 public:
-	Zombie(std::list<Zombie*>& zombiePositions, std::list<Human*>& humanPositions);
+	Zombie(std::list<Zombie*>& zombiePositions, std::list<Human*>& humanPositions, std::list<Corpses*>& corpsePositions);
 	~Zombie();
 	std::pair<int, int> getPosition();
 	void setPosition(int x, int y);

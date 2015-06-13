@@ -18,7 +18,6 @@ class ZombieFabric : public Runnable
 
 	bool createZombie(std::pair<int,int> pos);
 	bool createZombieAtRandomPosition();
-	void createZombieThread(Zombie& zombie);
 		
 public:
 	ZombieFabric(std::list<Corpses*>& corpses, std::list<Zombie*>& zombies, std::list<Human*>& humanPositions);

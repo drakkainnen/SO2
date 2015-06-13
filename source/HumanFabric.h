@@ -20,7 +20,6 @@ public:
 	
 	HumanFabric(std::list<Human*>& humans, std::list<Zombie*>& zombie, std::list<Corpses*>& corpses);
 
-	void createHumanThread(Human& human);
 	Human* createHuman();
 	void* run();
 	void process();

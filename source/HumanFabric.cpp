@@ -49,8 +49,8 @@ Human* HumanFabric::createHuman()
 		x = Simulation::MIN_X;
 	}
 	human->setPosition(x, y);
-	string message = "Human at ("+to_string(x)+", "+to_string(y)+").";
-	human->setMessage(message);
+//	string message = "Human at ("+to_string(x)+", "+to_string(y)+").";
+	//human->setMessage(message);
 
 	return human;
 }
@@ -71,15 +71,6 @@ void HumanFabric::process()
 	Human* h = createHuman();
 	pthread_mutex_lock(&Simulation::humanMutex);
 	humanPositions.push_back(h);
-	createHumanThread(*h);
+	createThread(*h);
 	pthread_mutex_unlock(&Simulation::humanMutex);
-}
-
-void HumanFabric::createHumanThread(Human& human)
-{	
-	pthread_attr_t attr; //moze detach bylby lepszy
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	pthread_create(&human.thread, &attr, human.starter, (void*)&human);
-	pthread_attr_destroy(&attr);
 }

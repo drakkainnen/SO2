@@ -10,6 +10,7 @@ class Runnable
 	std::string message;
 	std::string descryptor;
 
+	static int threadNumber;
 	static pthread_mutex_t pauseMutex;
 	static pthread_cond_t pauseCond;
 	static bool pauseFlag;
@@ -26,7 +27,8 @@ public:
 	static void* starter(void* args);
 	virtual void* run() = 0;
 
-	static void join(pthread_t& thread);
+	void createThread(Runnable& object);
+	static void join(Runnable* object);
 	static bool tryJoin(pthread_t& thread);	
 	void stopThread();
 	bool isStoped();

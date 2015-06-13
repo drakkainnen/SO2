@@ -27,6 +27,7 @@ public:
 	std::pair<int, int> getPosition();
 	void setPosition(int x, int y);
 	void setDirection(Direction direction);
+	bool hasWeapon();
 
 	void process();
 	void* run();

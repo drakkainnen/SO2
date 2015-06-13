@@ -17,10 +17,38 @@ Simulation::Simulation()
 {
 	fabricZombie = new ZombieFabric(corpsePositions, zombiePositions, humanPositions);
 	fabricHuman = new HumanFabric(humanPositions, zombiePositions, corpsePositions);
-	corpsePositions.push_back(new Corpses(10,20));
-	corpsePositions.push_back(new Corpses(10,20));
-	corpsePositions.push_back(new Corpses(10,20));
-	corpsePositions.push_back(new Corpses(10,20));
+	corpsePositions.push_back(new Corpses(12,20));
+	corpsePositions.push_back(new Corpses(12,20));
+	corpsePositions.push_back(new Corpses(12,20));
+	corpsePositions.push_back(new Corpses(12,20));
+	Human* h = new Human();
+	h->setPosition(0,20);
+	h->setDirection(Direction::EAST);
+	humanPositions.push_back(h);
+	h = new Human();
+	h->setPosition(0,19);
+	h->setDirection(Direction::EAST);
+	humanPositions.push_back(h);
+	h = new Human();
+	h->setPosition(0,21);
+	h->setDirection(Direction::EAST);
+	humanPositions.push_back(h);
+	h = new Human();
+	h->setPosition(0,20);
+	h->setDirection(Direction::EAST);
+	humanPositions.push_back(h);
+	h = new Human();
+	h->setPosition(0,19);
+	h->setDirection(Direction::EAST);
+	humanPositions.push_back(h);
+	h = new Human();
+	h->setPosition(0,21);
+	h->setDirection(Direction::EAST);
+	humanPositions.push_back(h);
+	for(auto h : humanPositions)
+	{
+		createThread(*h);
+	}
 }
 
 Simulation::~Simulation()
@@ -43,9 +71,9 @@ void Simulation::prepare()
 
 	createThreads();
 
-	join(fabricHuman->thread);
-	join(fabricZombie->thread);
-	join(thread);
+	join(fabricHuman);
+	join(fabricZombie);
+	join(this);
 	
 	deleteLocks();
 	pthread_exit(nullptr);
@@ -107,12 +135,12 @@ void Simulation::stopAllThreads()
 	for(auto t : zombiePositions)
 	{
 		t->stopThread();
-		join(t->thread);
+		join(t);
 	}
 	for(auto t : humanPositions)
 	{
 		t->stopThread();
-		join(t->thread);
+		join(t);
 	}
 }
 
@@ -139,13 +167,15 @@ void Simulation::printHumans()
 		auto human = *ix;
 		if(tryJoin(human->thread))
 		{
-			pushEvent("Human closed");
+			human->setMessage(" closed");
+			pushEvent(human->getMessageAndClean());
 			ix = humanPositions.erase(ix);
 		}
-		else
+		else// if(human->isStoped() == false)
 		{
 			auto pos = human->getPosition();
-			mvaddch(pos.second, pos.first, 'H');
+			char c = human->isEquiped ? 'W' : 'H';
+			mvaddch(pos.second, pos.first, c);
 			pushEvent(human->getMessageAndClean());
 			++ix;
 		}
@@ -174,14 +204,37 @@ void Simulation::printZombies()
 		auto zombie = *ix;
 		if(tryJoin(zombie->thread))
 		{
-			pushEvent("Zombie closed");
+			zombie->setMessage(" closed");
+			pushEvent(zombie->getMessageAndClean());
 			ix = zombiePositions.erase(ix);
 		}
-		else
+		else if(zombie->isStoped() == false)
 		{
 			auto pos = zombie->getPosition();
 			mvaddch(pos.second, pos.first, 'Z');
 			pushEvent(zombie->getMessageAndClean());
+
+			Corpses* c = nullptr;
+			for(auto h : humanPositions)
+			{
+				auto posH = h->getPosition();
+				if(posH.first == pos.first && posH.second == pos.second)
+				{
+					if(h->hasWeapon())
+					{
+						zombie->setMessage(" killed.");
+						zombie->stopThread();	
+						break;
+					}
+					else if(h->isStoped() == false)
+					{
+						h->setMessage(" converted.");
+						h->stopThread();
+						c = new Corpses(posH.first, posH.second);
+						corpsePositions.push_front(c);
+					}
+				}
+			}	
 			++ix;
 		}
 	}	

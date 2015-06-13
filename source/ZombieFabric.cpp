@@ -13,23 +13,13 @@ ZombieFabric::ZombieFabric(std::list<Corpses*>& corpses, std::list<Zombie*>& zom
 
 bool ZombieFabric::createZombie(pair<int, int> pos)
 {
-	Zombie* zombie = new Zombie(zombiePositions, humanPositions);	
+	Zombie* zombie = new Zombie(zombiePositions, humanPositions, corpsePositions);	
 	zombie->setPosition(pos.first, pos.second);
 	pthread_mutex_lock(&Simulation::zombieMutex);
 	zombiePositions.push_back(zombie);
-	createZombieThread(*zombie);
+	createThread(*zombie);
 	pthread_mutex_unlock(&Simulation::zombieMutex);
 	return true;
-}
-
-void ZombieFabric::createZombieThread(Zombie& zombie)
-{	
-	pthread_attr_t attr; //moze detach bylby lepszy
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	pthread_create(&zombie.thread, &attr, zombie.starter, (void*)&zombie);
-	zombie.thread = thread;
-	pthread_attr_destroy(&attr);
 }
 
 bool ZombieFabric::createZombieAtRandomPosition()
@@ -55,10 +45,10 @@ bool ZombieFabric::createZombieAtRandomPosition()
 			break;
 		}
 	}
-	Zombie* zombie = new Zombie(zombiePositions, humanPositions);
+	Zombie* zombie = new Zombie(zombiePositions, humanPositions, corpsePositions);
 	zombie->setPosition(x, y);	
 	zombiePositions.push_back(zombie);
-	createZombieThread(*zombie);
+	createThread(*zombie);
 	pthread_mutex_unlock(&Simulation::zombieMutex);
 	return true;
 }
@@ -93,9 +83,9 @@ void ZombieFabric::process()
 		if((*ix)->getPercent() == 100)
 		{
 			auto pos = (*ix)->getPosition();
-			z = new Zombie(zombiePositions, humanPositions);
+			z = new Zombie(zombiePositions, humanPositions, corpsePositions);
 			z->setPosition(pos.first, pos.second);
-			z->setMessage("Zombie at ("+to_string(pos.first)+", "+to_string(pos.second)+").");
+			z->setMessage(" at ("+to_string(pos.first)+", "+to_string(pos.second)+").");
 			readyZombie.push_back(z);
 			ix = corpsePositions.erase(ix);
 		}
@@ -114,7 +104,7 @@ void ZombieFabric::process()
 		
 		pthread_mutex_lock(&Simulation::zombieMutex);
 		zombiePositions.push_back(z);
-		createZombieThread(*z);
+		createThread(*z);
 		pthread_mutex_unlock(&Simulation::zombieMutex);
 	}
 }

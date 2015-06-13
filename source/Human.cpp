@@ -9,6 +9,11 @@ using namespace std;
 Human::Human()
 	: Runnable("Human")
 {
+
+	std::random_device generator;
+	std::mt19937_64 rand(generator());
+	std::uniform_int_distribution<int> dist(0, 10);
+	isEquiped = dist(rand) < 3 ? true : false;
 }
 
 pair<int, int> Human::getPosition()
@@ -65,4 +70,11 @@ void* Human::run()
 		}
 	}
 	pthread_exit((void*)1L);
+}
+
+bool Human::hasWeapon()
+{
+	bool result = isEquiped;
+	isEquiped = false;
+	return result;
 }

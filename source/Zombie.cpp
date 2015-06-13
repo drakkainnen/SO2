@@ -7,8 +7,8 @@
 
 using namespace std;
 
-Zombie::Zombie(std::list<Zombie*>& zombiePositions, std::list<Human*>& humanPositions)
-	: Runnable("Zombie"), zombiePositions(zombiePositions), humanPositions(humanPositions)
+Zombie::Zombie(std::list<Zombie*>& zombiePositions, std::list<Human*>& humanPositions, std::list<Corpses*>& corpsePositions)
+	: Runnable("Zombie"), zombiePositions(zombiePositions), humanPositions(humanPositions), corpsePositions(corpsePositions)
 {
 }
 
@@ -37,7 +37,31 @@ void Zombie::process()
 	int mX = 0;
 	int mY = 0;
 
-	pthread_mutex_lock(&Simulation::corpseMutex);
+	//pthread_mutex_lock(&Simulation::humanMutex);
+	//Corpses* c = nullptr;
+	//for(auto h : humanPositions)
+	//{
+	//	auto pos = h->getPosition();
+	//	if(pos.first == x && pos.second == y)
+	//	{
+	//		if(h->hasWeapon())
+	//		{
+	//			setMessage(" killed.");
+	//			this->stopThread();	
+	//			pthread_mutex_unlock(&Simulation::humanMutex);
+	//			return;
+	//		}
+	//		else
+	//		{
+	//			h->setMessage(" converted.");
+	//			h->stopThread();
+	//			c = new Corpses(pos.first, pos.second);
+	//		}
+	//	}
+	//}	
+	//pthread_mutex_unlock(&Simulation::humanMutex);
+
+	pthread_mutex_lock(&Simulation::zombieMutex);
 	if(randDirection == Direction::NORTH)
 	{
 		//jezeli idziesz na polnoc a nie mozesz to jednak zawroc
@@ -70,7 +94,14 @@ void Zombie::process()
 	x += mX;
 	y += mY;
 
-	pthread_mutex_unlock(&Simulation::corpseMutex);
+	pthread_mutex_unlock(&Simulation::zombieMutex);
+
+	//if(c != nullptr)
+	//{
+	//	pthread_mutex_lock(&Simulation::corpseMutex);
+	//	corpsePositions.push_front(c);		
+	//	pthread_mutex_unlock(&Simulation::corpseMutex);
+	//}
 }
 
 void* Zombie::run()

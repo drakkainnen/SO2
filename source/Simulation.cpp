@@ -60,6 +60,10 @@ Simulation::~Simulation()
 	{
 		delete z;
 	}
+	for(auto c : corpsePositions)
+	{
+		delete c;
+	}
 	delete fabricZombie;
 	delete fabricHuman;
 }
@@ -100,6 +104,7 @@ void* Simulation::run()
 	MIN_X = 1;
 
 	char c = 0;
+	bool pauseFlag = false;
 	
 	while(c != 'c')
 	{
@@ -118,6 +123,11 @@ void* Simulation::run()
 		pthread_mutex_unlock(&Simulation::humanMutex);
 	
 		printEvents();
+		
+		if(pauseFlag == true)
+		{
+			mvwaddstr(simWindow, MAX_Y/2, MAX_X/2, "PAUSED");
+		}
 
 		wrefresh(simWindow);
 		wrefresh(corpseWindow);
@@ -130,14 +140,12 @@ void* Simulation::run()
 		if(c == 'p')
 		{			
 			Runnable::pause();
+			pauseFlag = true;
 		}
 		else if(c == 'P')
 		{			
 			Runnable::reasume();
-		}
-		else if(c == 'd')
-		{
-			stopAllThreads();
+			pauseFlag = false;
 		}
 	}
 	endwin();

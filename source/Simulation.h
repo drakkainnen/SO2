@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <list>
 #include <sstream>
+#include <ncurses.h>
 
 #include "Runnable.h"
 #include "ZombieFabric.h"
@@ -20,6 +21,9 @@ class Simulation : public Runnable
 	HumanFabric* fabricHuman;
 
 	std::list<std::string> events;
+	WINDOW* corpseWindow;
+	WINDOW* eventsWindow;
+	WINDOW* simWindow;
 
 	void prepareLocks();
 	void deleteLocks();

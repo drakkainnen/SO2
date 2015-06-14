@@ -1,5 +1,4 @@
 #include "Simulation.h"
-#include <ncurses.h>
 #include <iostream>
 #include <unistd.h>
 
@@ -84,13 +83,29 @@ void* Simulation::run()
 	initscr();
 	curs_set(0);
 	getmaxyx(stdscr, MAX_Y, MAX_X); 
-	MAX_X -= 30;
+   	corpseWindow = newwin(MAX_Y/2, 30, 0, MAX_X-30);
+	eventsWindow = newwin(MAX_Y/2, 30, MAX_Y/2, MAX_X-30);
+	simWindow = newwin(MAX_Y, MAX_X-31, 0, 0);
+	
+	start_color();
+	init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+	init_pair(2, COLOR_RED, COLOR_BLACK);
+	init_pair(3, COLOR_GREEN, COLOR_BLACK);
+	init_pair(4, COLOR_BLUE, COLOR_BLACK);
+
+
+	MAX_X -= 31;
+	MAX_Y -= 1;
+	MIN_Y = 1;
+	MIN_X = 1;
 
 	char c = 0;
 	
 	while(c != 'c')
 	{
-		clear();
+		wclear(simWindow);
+		wclear(corpseWindow);
+		wclear(eventsWindow);
 
 		pthread_mutex_lock(&Simulation::humanMutex);
 		pthread_mutex_lock(&Simulation::zombieMutex);
@@ -104,7 +119,9 @@ void* Simulation::run()
 	
 		printEvents();
 
-		refresh();
+		wrefresh(simWindow);
+		wrefresh(corpseWindow);
+		wrefresh(eventsWindow);
 
 		noecho();
 		timeout(1);
@@ -175,7 +192,8 @@ void Simulation::printHumans()
 		{
 			auto pos = human->getPosition();
 			char c = human->isEquiped ? 'W' : 'H';
-			mvaddch(pos.second, pos.first, c);
+			wattrset(simWindow, COLOR_PAIR(3));
+			mvwaddch(simWindow, pos.second, pos.first, c);
 			pushEvent(human->getMessageAndClean());
 			++ix;
 		}
@@ -211,7 +229,9 @@ void Simulation::printZombies()
 		else if(zombie->isStoped() == false)
 		{
 			auto pos = zombie->getPosition();
-			mvaddch(pos.second, pos.first, 'Z');
+
+			wattrset(simWindow, COLOR_PAIR(2));
+			mvwaddch(simWindow, pos.second, pos.first, 'Z');
 			pushEvent(zombie->getMessageAndClean());
 
 			Corpses* c = nullptr;
@@ -245,14 +265,16 @@ void Simulation::printCorpses()
 {
 	//pthread_mutex_lock(&Simulation::corpseMutex);
 	int coordY = 0;
-	mvprintw(coordY, MAX_X, "Stan zwlok");
+	mvwprintw(corpseWindow, coordY, 3, "Stan zwlok");
 	++coordY;
 
+	wattron(corpseWindow, COLOR_PAIR(1));
 	for(auto ix = corpsePositions.rbegin(); ix != corpsePositions.rend(); ++ix)
 	{
 		auto pos = (*ix)->getPosition();
 		auto per = (*ix)->getPercent();
-		mvaddch(pos.second, pos.first, 'X');
+		wattrset(simWindow, COLOR_PAIR(4));
+		mvwaddch(simWindow, pos.second, pos.first, 'X');
 
 		if(coordY < 10)
 		{
@@ -263,11 +285,11 @@ void Simulation::printCorpses()
 				percent = i*10;
 				if(percent != per)
 				{
-					mvaddch(coordY, MAX_X+i, '=');
+					mvwaddch(corpseWindow, coordY, 1+i, '=');
 				}
 				else
 				{
-					mvprintw(coordY, MAX_X+i, "> %d%%", per);
+					mvwprintw(corpseWindow, coordY, 1+i, "> %d%%", per);
 				}
 				++i;
 			}
@@ -275,6 +297,7 @@ void Simulation::printCorpses()
 			++coordY;
 		}
 	}	
+	wattroff(corpseWindow, COLOR_PAIR(1));
 	//pthread_mutex_unlock(&Simulation::corpseMutex);
 }
 
@@ -294,9 +317,12 @@ void Simulation::createThreads()
 void Simulation::printEvents()
 {
 	int c = 0;
+	mvwaddstr(eventsWindow, c, 3, "Zdarzenia");
+	wattron(eventsWindow, COLOR_PAIR(1));
 	for(auto e : events)	
 	{
-		mvaddstr(12+c, MAX_X, e.c_str());
+		mvwaddstr(eventsWindow, 1+c, 3, e.c_str());
 		++c;
 	}
+	wattroff(eventsWindow, COLOR_PAIR(1));
 }

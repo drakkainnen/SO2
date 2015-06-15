@@ -9,11 +9,14 @@ int Runnable::threadNumber = 0;
 
 Runnable::~Runnable()
 {
+	pthread_mutex_destroy(&stopMutex);
 }
 
 Runnable::Runnable(std::string descryptor)
 {
 	this->descryptor = descryptor + " " + to_string(++threadNumber);
+	pthread_mutex_init(&stopMutex, NULL);
+
 }
 
 void Runnable::createThread(Runnable& runnable)
@@ -54,8 +57,9 @@ bool Runnable::tryJoin(pthread_t& thread)
 void Runnable::stopThread()
 {
 	reasume();
+	pthread_mutex_lock(&stopMutex);	
 	stop = true;
-	message = " stoped.";
+	pthread_mutex_unlock(&stopMutex);	
 }
 
 bool Runnable::isStoped()

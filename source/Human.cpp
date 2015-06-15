@@ -51,6 +51,11 @@ void Human::process()
 		++y;
 	}
 	pthread_mutex_unlock(&Simulation::humanMutex);	
+
+	if(x < Simulation::MIN_X || y < Simulation::MIN_Y || x > Simulation::MAX_X || y > Simulation::MAX_Y)
+	{
+		stopThread();
+	}
 }
 
 void* Human::run()
@@ -59,15 +64,19 @@ void* Human::run()
 	std::mt19937_64 rand(generator());
 	std::uniform_int_distribution<int> dist(500000, 1000000);
 
-	while(isStoped() == false)
+	while(true)
 	{
+		pthread_mutex_lock(&this->stopMutex);
+		if(isStoped() == true)
+		{
+			pthread_mutex_unlock(&this->stopMutex);
+			break;
+		}
+		pthread_mutex_unlock(&this->stopMutex);
+
 		checkAndSuspend();
 		usleep(dist(rand));
 		process();
-		if(x < Simulation::MIN_X || y < Simulation::MIN_Y || x > Simulation::MAX_X || y > Simulation::MAX_Y)
-		{
-			stopThread();
-		}
 	}
 	pthread_exit((void*)1L);
 }

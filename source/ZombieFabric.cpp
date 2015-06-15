@@ -63,10 +63,17 @@ void ZombieFabric::addCorpse(int x, int y)
 
 void* ZombieFabric::run()
 {
-	while(isStoped() == false)
+	while(true)
 	{
+		pthread_mutex_lock(&this->stopMutex);
+		if(isStoped() == true)
+		{
+			pthread_mutex_unlock(&this->stopMutex);
+			break;
+		}
+		pthread_mutex_unlock(&this->stopMutex);
+
 		Runnable::checkAndSuspend();
-		//createZombieAtRandomPosition();
 		process();
 		usleep(1000000);
 	}

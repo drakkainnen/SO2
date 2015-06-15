@@ -57,8 +57,16 @@ Human* HumanFabric::createHuman()
 
 void* HumanFabric::run()
 {
-	while(isStoped() == false)
+	while(true)
 	{
+		pthread_mutex_lock(&this->stopMutex);
+		if(isStoped() == true)
+		{
+			pthread_mutex_unlock(&this->stopMutex);
+			break;
+		}
+		pthread_mutex_unlock(&this->stopMutex);
+
 		process();
 		usleep(1000000);
 		checkAndSuspend();

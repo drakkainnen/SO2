@@ -109,8 +109,16 @@ void* Zombie::run()
 	random_device generator;
 	mt19937 mt(generator());
 	uniform_int_distribution<int> sleepTime(5000, 1000000);
-	while(isStoped() == false)
+	while(true)
 	{
+		pthread_mutex_lock(&this->stopMutex);
+		if(isStoped() == true)
+		{
+			pthread_mutex_unlock(&this->stopMutex);
+			break;
+		}
+		pthread_mutex_unlock(&this->stopMutex);
+
 		process();
 		usleep(sleepTime(mt));
 		checkAndSuspend();

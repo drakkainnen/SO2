@@ -52,6 +52,8 @@ Simulation::Simulation()
 
 Simulation::~Simulation()
 {
+	delete fabricZombie;
+	delete fabricHuman;
 	for(auto z : corpsePositions)
 	{
 		delete z;
@@ -64,8 +66,6 @@ Simulation::~Simulation()
 	{
 		delete c;
 	}
-	delete fabricZombie;
-	delete fabricHuman;
 }
 
 void Simulation::prepare()
@@ -74,8 +74,6 @@ void Simulation::prepare()
 
 	createThreads();
 
-	join(fabricHuman);
-	join(fabricZombie);
 	join(this);
 	
 	deleteLocks();
@@ -156,7 +154,11 @@ void* Simulation::run()
 void Simulation::stopAllThreads()
 {
 	fabricZombie->stopThread();
+	join(fabricZombie);
+
 	fabricHuman->stopThread();
+	join(fabricHuman);
+
 	for(auto t : zombiePositions)
 	{
 		t->stopThread();

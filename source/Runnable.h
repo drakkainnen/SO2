@@ -17,6 +17,7 @@ class Runnable
 
 public:
 	pthread_t thread;
+	pthread_mutex_t stopMutex;
 
 	Runnable(std::string descryptor);
 	virtual ~Runnable();
